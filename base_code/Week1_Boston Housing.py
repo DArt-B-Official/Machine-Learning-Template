@@ -9,10 +9,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 from sklearn.datasets import fetch_openml
 
-# 1. 데이터 로딩
-# OpenML에서 Boston 데이터 불러오기
+# 1. 데이터 로딩 (OpenML에서 Boston 데이터셋 불러오기)
 boston = fetch_openml(name="boston", version=1, as_frame=True)
-df = boston.frame  # 13개 특성 + MEDV(타깃)
+df = boston.frame   # 13개 특성 + MEDV(목표값)
 
 X = df.drop(columns=["MEDV"])
 y = df["MEDV"]
@@ -21,49 +20,37 @@ feature_names = X.columns
 print(X.shape, y.shape)
 df.head()
 
-# 2. 간단 확인
-print("결측치 개수:\n", X.isna().sum(), "\n")
-print(df.describe().T)
+# ===========================================================
+# 아래부터는 TODO: 직접 작성할 부분
+# ===========================================================
 
-# 3. 학습: 표준화 + 선형회귀
-model = make_pipeline(
-    StandardScaler(with_mean=True, with_std=True),
-    LinearRegression()
-)
-model.fit(X, y)
+# 2. 간단 EDA
+# - 결측치 확인하기 (X.isna().sum())
+# - describe()로 기본 통계 확인하기
+# - MEDV(target)의 분포를 히스토그램으로 시각화해보면 좋음
 
-lin = model.named_steps["linearregression"]
-coef = lin.coef_
-intercept = lin.intercept_
+# 3. 선형회귀 모델 학습
+# - StandardScaler와 LinearRegression을 Pipeline으로 묶어서 사용
+#   예: make_pipeline(StandardScaler(), LinearRegression())
+# - model.fit(X, y) 호출
 
-coef_df = pd.DataFrame({"feature": feature_names, "coef": coef})
-coef_df["abs_coef"] = coef_df["coef"].abs()
+# 4. 회귀계수 확인
+# - model.named_steps["linearregression"].coef_ 로 계수 가져오기
+# - pd.DataFrame으로 feature와 coef 묶어서 정리
+# - 절댓값이 큰 순서대로 정렬해서 어떤 변수가 영향력이 큰지 보기
 
-# 계수 크기 확인
-coef_sorted_pos = coef_df.sort_values("coef", ascending=False)
-coef_sorted_abs = coef_df.sort_values("abs_coef", ascending=False)
+# 5. 긍정적/부정적 영향 확인
+# - coef가 가장 큰 특성 → 가격 상승에 가장 긍정적 영향
+# - coef가 가장 작은 특성 → 가격 하락에 가장 큰 부정적 영향
+# - print()로 결과 출력
 
-print("상위 양의 계수 5개:\n", coef_sorted_pos.head(5), "\n")
-print("절댓값 기준 상위 5개:\n", coef_sorted_abs.head(5), "\n")
+# 6. 시각화
+# - matplotlib.pyplot.bar() 로 feature별 coef 시각화
+# - plt.axhline(0) 그려서 양/음 구분하기
+# - X축: feature 이름, Y축: coefficient
 
-# 가장 긍정/부정적 영향 특성
-pos_top = coef_sorted_pos.iloc[0]
-neg_top = coef_df.sort_values("coef").iloc[0]
-
-print(f"가장 긍정적 영향: {pos_top['feature']} (coef={pos_top['coef']:.4f})")
-print(f"가장 부정적 영향: {neg_top['feature']} (coef={neg_top['coef']:.4f})")
-
-# 4. 시각화
-plt.figure(figsize=(11, 5))
-order = coef_df.sort_values("coef")
-plt.bar(order["feature"], order["coef"])
-plt.axhline(0, linewidth=1)
-plt.xticks(rotation=45, ha="right")
-plt.ylabel("Coefficient")
-plt.title("Linear Regression Coefficients (Standardized Features)")
-plt.tight_layout()
-plt.show()
-
-# 5. 결과 저장 (선택)
-coef_df.to_csv("boston_coef.csv", index=False)
-print("Saved: boston_coef.csv")
+# 7. 추가 분석 (선택)
+# - coef_df를 CSV로 저장하기
+# - R², RMSE 등 성능 지표 계산해보기
+# - Ridge/Lasso와 비교해보기
+# 7. 추가 분석 과정을 안하고, 6번까지 하고 인증하셔도 괜찮습니다. 
