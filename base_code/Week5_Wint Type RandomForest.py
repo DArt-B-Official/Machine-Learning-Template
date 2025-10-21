@@ -1,5 +1,5 @@
 # Week 5: RandomForest 튜닝 비교 (Baseline Code)
-# - 목표: 3주차 와인 품질(레드/화이트) 데이터 재사용, RandomForest 튜닝 비교
+# - 목표: 4주차 와인 품질(레드/화이트) 데이터 재사용, RandomForest 튜닝 비교
 # - 실험: n_estimators ∈ {100, 2000}, max_features ∈ {"sqrt","log2", None, 0.5} (총 8조합)
 # - 지표: Accuracy, F1-macro (+ 학습시간), 최고 조합의 feature_importances_ 해석
 # - 제출: (1) 8조합 결과표, (2) 최고 조합 선택 및 근거, (3) 중요 변수 Top-10
@@ -11,9 +11,7 @@ from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, make_scorer
 
-# =============================
-# 1) 데이터 불러오기 (3주차와 동일)
-# =============================
+# 1) 데이터 불러오기 (4주차와 동일)
 PATH_RED   = "winequality-red.csv"    # UCI 데이터, 구분자 ';'
 PATH_WHITE = "winequality-white.csv"
 
@@ -37,9 +35,7 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, stratify=y, random_state=42
 )
 
-# =============================
 # 2) 실험 준비
-# =============================
 cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
 # 다중분류 AUC가 필요하면 OVR, 이진이면 기본 사용 가능
@@ -58,9 +54,7 @@ grid_mf = ['sqrt', 'log2', None, 0.5]
 results = []
 feat_imp_by_setting = {}  # 조합별 평균 feature_importances_ 저장
 
-# =============================
 # 3) 8개 조합 교차검증
-# =============================
 for ne in grid_ne:
     for mf in grid_mf:
         rf = RandomForestClassifier(
@@ -98,9 +92,7 @@ df_res = pd.DataFrame(results).sort_values(['f1m','acc'], ascending=False).reset
 print("\n=== 8개 조합 결과표 (교차검증 평균) ===")
 print(df_res)
 
-# =============================
 # 4) 최고 조합 선택 + Test 성능 확인
-# =============================
 best_row = df_res.iloc[0]
 best_ne = int(best_row['n_estimators'])
 best_mf = best_row['max_features']
@@ -117,10 +109,8 @@ acc_test = accuracy_score(y_test, y_pred)
 f1m_test = f1_score(y_test, y_pred, average='macro')
 print(f"[Test] Accuracy={acc_test:.4f}, F1-macro={f1m_test:.4f}")
 
-# =============================
 # 5) 중요 변수 해석 (Top-10)
-# =============================
-# 교차검증 평균 importances 사용(일반화된 해석을 위해)
+# - 교차검증 평균 importances 사용(일반화된 해석을 위해)
 best_imp = feat_imp_by_setting[(best_ne, best_mf)]
 feat_names = X.columns.to_list()
 
@@ -138,9 +128,7 @@ for rank, i in enumerate(idx_sorted, 1):
 # plt.title(f"Feature Importances (best: ne={best_ne}, mf={best_mf})")
 # plt.tight_layout(); plt.show()
 
-# =============================
-# 6) 리포트에 포함할 최소 산출물 가이드 (주석)
-# =============================
+# 6) 리포트에 포함할 최소 산출물 가이드 
 # - 표1: df_res (8조합 Acc/F1m/AUC/시간) 캡처 또는 표 붙이기
 # - 문단: best 조합 선정 근거(성능/시간 트레이드오프 포함)
 # - 표/리스트: 중요 변수 Top-10 + 간단 해석(왜 중요할지 도메인 추론 2~3줄)
